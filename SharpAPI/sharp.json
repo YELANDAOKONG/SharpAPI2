@@ -1,0 +1,26 @@
+{
+  "Id": "SharpAPI",
+  "Namespace": "SharpAPI",
+
+  "Version": {
+    "Major": 1,
+    "Minor": 0,
+    "Patch": 3
+  },
+
+  "EntryPoint": "SharpAPI.dll",
+  "MainClass": "SharpAPI.ModuleMain",
+  "NativeDependencies": [
+    "SharpASM.dll",
+    "SharpMixin.dll"
+  ],
+
+  "Title": "SharpAPI",
+  "Description": "Sharp Loader Modding API",
+  "Authors": [
+    "Yelandaokong"
+  ],
+  "Urls": [
+    "https://github.com/YELANDAOKONG/SharpAPI2/"
+  ]
+}
