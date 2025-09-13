@@ -389,4 +389,10 @@ public class MixinExecutor
                 return false;
         }
     }
+    
+    public void RescanMixins()
+    {
+        Mixins = MixinScanner.ScanAllLoadedAssemblies();
+        Logger?.Info($"Rescanned mixins. Found {Mixins.Count} mixins.");
+    }
 }
