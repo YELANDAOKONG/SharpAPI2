@@ -112,27 +112,25 @@ public class MixinExecutor
                 try
                 {
                     CodeAttributeStruct code = CodeAttributeStruct.FromStructInfo(info);
-                    List<Code> codes = code.GetCode();
-                    List<Code> currentCodes = codes;
-                    
+                    CodeAttributeStruct currentCode = code;
+    
                     foreach (var mixin in matchingMixins)
                     {
                         try
                         {
-                            currentCodes = mixin.Invoke(clazz, currentCodes);
+                            // 直接传入 CodeAttributeStruct 以允许修改更多内容
+                            currentCode = mixin.Invoke(clazz, currentCode);
                             modified = true;
                             Logger?.Debug($"Applied mixin: {mixin.Method.DeclaringType?.Name}.{mixin.Method.Name}");
                         }
                         catch (Exception ex)
                         {
                             Logger?.Error($"Error executing mixin method {mixin.Method.DeclaringType?.Name}.{mixin.Method.Name}: {ex}");
-                            Logger?.Trace($"Error executing mixin method {mixin.Method.DeclaringType?.Name}.{mixin.Method.Name}: {ex.StackTrace}");
-                            // 继续处理其他 Mixin (不中断整个流程)
+                            // 继续处理其他 Mixin
                         }
                     }
-                    
-                    code.SetCode(currentCodes);
-                    codeAttribute.Info = code.ToBytesWithoutIndexAndLength();
+    
+                    codeAttribute.Info = currentCode.ToBytesWithoutIndexAndLength();
                 }
                 catch (Exception ex)
                 {
