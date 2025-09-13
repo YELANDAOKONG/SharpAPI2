@@ -52,7 +52,7 @@ public class MixinExecutor
             {
                 // 检查是否有针对此类的 Mixin 方法
                 bool hasMixinForClass = HasMixinForClass(className);
-                Logger?.Debug($"Class {className} inquiry: {(hasMixinForClass ? "will modify" : "skip")}");
+                // Logger?.Debug($"Class {className} inquiry: {(hasMixinForClass ? "will modify" : "skip")}");
                 
                 // 返回空数组表示需要修改此类，NULL表示不需要
                 return hasMixinForClass ? Array.Empty<byte>() : null;
@@ -64,7 +64,7 @@ public class MixinExecutor
                 return null;
             }
 
-            Logger?.Info($"Modifying class: {className}");
+            Logger?.Info($"Modifying class: {className} ({classData.Length} Bytes)");
 
             var klass = ClassParser.Parse(classData);
             Class? clazz = Class.FromStruct(klass);
