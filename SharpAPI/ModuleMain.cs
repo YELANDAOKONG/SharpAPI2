@@ -18,9 +18,13 @@ public class ModuleMain : ModuleBase
     protected override void OnInitialize(ModuleManager manager, LoggerService? logger)
     {
         Logger?.Info("SharpAPI loaded.");
-        Executor = new MixinExecutor(manager, logger?.CreateSubModule("MixinExecutor"));
     }
-    
+
+    public override void PostInitialize(ModuleManager manager)
+    {
+        Executor = new MixinExecutor(manager, Logger?.CreateSubModule("MixinExecutor"));
+    }
+
     public override byte[]? ModifyClass(string className, byte[]? classData)
     {
         if (Executor == null)
