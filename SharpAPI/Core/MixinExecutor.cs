@@ -20,6 +20,9 @@ public class MixinExecutor
     
     public List<MixinMethodInfo> MixinMethods { get; private set; }
 
+    // 缓存类名格式（使用'/'作为分隔符）
+    private readonly Dictionary<string, string> _normalizedClassNames = new Dictionary<string, string>();
+
     public MixinExecutor(ModuleManager manager, LoggerService? logger)
     {
         Manager = manager;
@@ -66,7 +69,7 @@ public class MixinExecutor
             var klass = ClassParser.Parse(classData);
             Class? clazz = Class.FromStruct(klass);
 
-            if (clazz is null || clazz == null)
+            if (clazz is null)
             {
                 Logger?.Warn($"Failed to parse class: {className}");
                 return null;
@@ -90,42 +93,51 @@ public class MixinExecutor
                 }
 
                 Logger?.Debug($"Applying {matchingMixins.Count} mixin(s) to method: {methodName}");
-                foreach (var methodAttribute in method.Attributes)
+                
+                // 查找方法的 Code 属性
+                var codeAttribute = method.Attributes.FirstOrDefault(attr => attr.Name == "Code");
+                if (codeAttribute is null)
                 {
-                    if (methodAttribute.Name == "Code")
-                    {
-                        AttributeInfoStruct info = new AttributeInfoStruct()
-                        {
-                            AttributeLength = 0, // Ignored
-                            AttributeNameIndex = 0, // Ignored
-                            Info = methodAttribute.Info,
-                        };
-                        CodeAttributeStruct code = CodeAttributeStruct.FromStructInfo(info);
+                    Logger?.Debug($"Method {methodName} has no Code attribute, skipping");
+                    continue;
+                }
 
-                        List<Code> codes = code.GetCode();
-                        List<Code> currentCodes = codes;
-                        foreach (var mixin in matchingMixins)
-                        {
-                            try
-                            {
-                                currentCodes = mixin.Invoke(clazz, currentCodes);
-                                modified = true;
-                                Logger?.Debug($"Applied mixin: {mixin.Method.DeclaringType?.Name}.{mixin.Method.Name}");
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger?.Error($"Error executing mixin method {mixin.Method.DeclaringType?.Name}.{mixin.Method.Name}: {ex}");
-                                Logger?.Trace($"Error executing mixin method {mixin.Method.DeclaringType?.Name}.{mixin.Method.Name}: {ex.StackTrace}");
-                                // 继续处理其他 Mixin (不中断整个流程)
-                            }
-                        }
-                        code.SetCode(currentCodes);
-                        methodAttribute.Info = code.ToBytesWithoutIndexAndLength();
-                    }
-                    else
+                AttributeInfoStruct info = new AttributeInfoStruct()
+                {
+                    AttributeLength = 0, // Ignored
+                    AttributeNameIndex = 0, // Ignored
+                    Info = codeAttribute.Info,
+                };
+                
+                try
+                {
+                    CodeAttributeStruct code = CodeAttributeStruct.FromStructInfo(info);
+                    List<Code> codes = code.GetCode();
+                    List<Code> currentCodes = codes;
+                    
+                    foreach (var mixin in matchingMixins)
                     {
-                        Logger?.Debug($"Skipping {methodName} (No Code Attribute)");
+                        try
+                        {
+                            currentCodes = mixin.Invoke(clazz, currentCodes);
+                            modified = true;
+                            Logger?.Debug($"Applied mixin: {mixin.Method.DeclaringType?.Name}.{mixin.Method.Name}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger?.Error($"Error executing mixin method {mixin.Method.DeclaringType?.Name}.{mixin.Method.Name}: {ex}");
+                            Logger?.Trace($"Error executing mixin method {mixin.Method.DeclaringType?.Name}.{mixin.Method.Name}: {ex.StackTrace}");
+                            // 继续处理其他 Mixin (不中断整个流程)
+                        }
                     }
+                    
+                    code.SetCode(currentCodes);
+                    codeAttribute.Info = code.ToBytesWithoutIndexAndLength();
+                }
+                catch (Exception ex)
+                {
+                    Logger?.Error($"Error processing Code attribute for method {methodName}: {ex}");
+                    // 继续处理其他方法
                 }
             }
 
@@ -155,25 +167,43 @@ public class MixinExecutor
     }
 
     /// <summary>
+    /// 规范化类名格式（使用'/'作为分隔符）
+    /// </summary>
+    private string NormalizeClassName(string className)
+    {
+        if (_normalizedClassNames.TryGetValue(className, out var normalized))
+        {
+            return normalized;
+        }
+        
+        normalized = className.Replace('.', '/');
+        _normalizedClassNames[className] = normalized;
+        return normalized;
+    }
+
+    /// <summary>
     /// 检查是否有针对指定类的 Mixin 方法
     /// </summary>
     private bool HasMixinForClass(string className)
     {
+        string normalizedClassName = NormalizeClassName(className);
+        
         return MixinMethods.Any(mixin =>
         {
             string targetClassName = mixin.Attribute.ClassName;
+            string normalizedTargetClassName = NormalizeClassName(targetClassName);
             
             // 根据 NameType 处理类名匹配
             switch (mixin.Attribute.NameType)
             {
                 case NameType.Default:
-                    return targetClassName == className;
+                    return normalizedTargetClassName == normalizedClassName;
                 case NameType.ObfuscatedName:
-                    return Searcher.MatchClass(className, targetClassName);
+                    return Searcher.MatchClass(normalizedClassName, normalizedTargetClassName);
                 case NameType.MappedName:
                     var classMapping = Searcher.Set.Classes.Values
-                        .FirstOrDefault(c => c.MappedName == targetClassName);
-                    return classMapping != null && classMapping.ObfuscatedName == className;
+                        .FirstOrDefault(c => NormalizeClassName(c.MappedName) == normalizedTargetClassName);
+                    return classMapping != null && NormalizeClassName(classMapping.ObfuscatedName) == normalizedClassName;
                 default:
                     return false;
             }
@@ -182,10 +212,13 @@ public class MixinExecutor
 
     private List<MixinMethodInfo> FindMatchingMixins(string className, string methodName, string methodDescriptor)
     {
+        string normalizedClassName = NormalizeClassName(className);
         var result = new List<MixinMethodInfo>();
+        
         foreach (var mixin in MixinMethods)
         {
             string targetClassName = mixin.Attribute.ClassName;
+            string normalizedTargetClassName = NormalizeClassName(targetClassName);
             string targetMethodName = mixin.Attribute.MethodName;
             string targetMethodSignature = mixin.Attribute.MethodSignature;
 
@@ -198,25 +231,36 @@ public class MixinExecutor
             {
                 case NameType.Default:
                     // 直接比较字符串
-                    classNameMatches = targetClassName == className;
+                    classNameMatches = normalizedTargetClassName == normalizedClassName;
                     methodNameMatches = targetMethodName == methodName;
                     break;
                 case NameType.ObfuscatedName:
                     // 使用 MappingSearcher 检查混淆名是否匹配
-                    classNameMatches = Searcher.MatchClass(className, targetClassName);
-                    methodNameMatches = targetMethodName == methodName; // 方法名通常直接比较，因为混淆名可能已经提供
+                    classNameMatches = Searcher.MatchClass(normalizedClassName, normalizedTargetClassName);
+                    methodNameMatches = targetMethodName == methodName;
                     break;
                 case NameType.MappedName:
                     // 使用 MappingSearcher 获取映射名并比较
-                    var classMapping = Searcher.Set.Classes.Values.FirstOrDefault(c => c.MappedName == targetClassName);
+                    var classMapping = Searcher.Set.Classes.Values
+                        .FirstOrDefault(c => NormalizeClassName(c.MappedName) == normalizedTargetClassName);
+                    
                     if (classMapping != null)
                     {
-                        classNameMatches = classMapping.ObfuscatedName == className;
-                    }
-                    var methodMapping = Searcher.SearchMethodMapping(methodName);
-                    if (methodMapping != null)
-                    {
-                        methodNameMatches = methodMapping.MappedName == targetMethodName;
+                        classNameMatches = NormalizeClassName(classMapping.ObfuscatedName) == normalizedClassName;
+                        
+                        // 对于方法名，可能需要查找映射
+                        var methodMapping = classMapping.Methods
+                            .FirstOrDefault(m => NormalizeClassName(m.MappedName) == targetMethodName);
+                        
+                        if (methodMapping != null)
+                        {
+                            methodNameMatches = methodMapping.ObfuscatedName == methodName;
+                        }
+                        else
+                        {
+                            // 如果没有找到映射，直接比较
+                            methodNameMatches = targetMethodName == methodName;
+                        }
                     }
                     break;
             }
