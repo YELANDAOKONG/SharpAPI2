@@ -122,6 +122,10 @@ public class MixinExecutor
                         code.SetCode(currentCodes);
                         methodAttribute.Info = code.ToBytesWithoutIndexAndLength();
                     }
+                    else
+                    {
+                        Logger?.Debug($"Skipping {methodName} (No Code Attribute)");
+                    }
                 }
             }
 
