@@ -22,27 +22,20 @@
       <PackageReference Include="SharpMC.SharpASM" Version="1.0.3" />
       <PackageReference Include="SharpMC.SharpLoader" Version="1.0.3" />
       <PackageReference Include="SharpMC.SharpMixin" Version="1.0.3" />
-      <PackageReference Include="SharpMC.SharpPackage" Version="1.0.3.6" />
+      <PackageReference Include="SharpMC.SharpPackage" Version="1.0.3.7" />
     </ItemGroup>
 
     <PropertyGroup>
         <SharpPackageOutputPath>$(OutputPath)..\dist\</SharpPackageOutputPath>
         <SharpPackageSkip>false</SharpPackageSkip>
+        <SharpPackageIncludeAllDlls>false</SharpPackageIncludeAllDlls>
     </PropertyGroup>
 
     <ItemGroup>
         <!-- Include README.md from solution directory -->
-        <SharpPackageInclude Include="$(MSBuildProjectDirectory)\..\README.MD">
-            <TargetPath>README.MD</TargetPath>
-        </SharpPackageInclude>
-        <!-- Include SharpASM.dll from NuGet package directory -->
-        <SharpPackageInclude Include="$(OutputPath)SharpASM.dll">
-            <TargetPath>SharpASM.dll</TargetPath>
-        </SharpPackageInclude>
-        <!-- Include SharpMixin.dll from NuGet package directory -->
-        <SharpPackageInclude Include="$(OutputPath)SharpMixin.dll">
-            <TargetPath>SharpMixin.dll</TargetPath>
-        </SharpPackageInclude>
+        <SharpPackageInclude Include="$(MSBuildProjectDirectory)\..\README.MD" />
+        <!-- <SharpPackageInclude Include="$(OutputPath)SharpASM.dll" /> -->
+        <!-- <SharpPackageInclude Include="$(OutputPath)SharpMixin.dll" /> -->
     </ItemGroup>
 
 
