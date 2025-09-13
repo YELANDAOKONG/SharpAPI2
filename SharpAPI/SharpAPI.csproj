@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>SharpMC.SharpAPI</PackageId>
-        <Version>1.0.3.3</Version>
+        <Version>1.0.4.0</Version>
         <Authors>YELANDAOKONG</Authors>
         <Description>Sharp Loader's Modding API</Description>
         <PackageProjectUrl>https://github.com/YELANDAOKONG/SharpAPI2</PackageProjectUrl>
@@ -21,7 +21,7 @@
     <ItemGroup>
       <PackageReference Include="SharpMC.SharpASM" Version="1.0.3.1" />
       <PackageReference Include="SharpMC.SharpLoader" Version="1.0.3.2" />
-      <PackageReference Include="SharpMC.SharpMixin" Version="1.0.3.4" />
+      <PackageReference Include="SharpMC.SharpMixin" Version="1.0.4" />
       <PackageReference Include="SharpMC.SharpPackage" Version="1.0.3.8" />
     </ItemGroup>
 
