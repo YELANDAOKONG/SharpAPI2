@@ -48,7 +48,7 @@ public class MixinExecutor
         try
         {
             // 处理询问是否需要修改此类的情况
-            if (classData is null)
+            if (classData is null || classData.Length == 0)
             {
                 // 检查是否有针对此类的 Mixin 方法
                 bool hasMixinForClass = HasMixinForClass(className);
