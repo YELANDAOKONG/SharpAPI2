@@ -192,8 +192,7 @@ public class MixinExecutor
                     {
                         try
                         {
-                            // 直接传入 CodeAttributeStruct 以允许修改更多内容
-                            currentCode = ((MethodCodeMixinInfo)mixin).Invoke(clazz, currentCode);
+                            currentCode = ((MethodCodeMixinInfo)mixin).Invoke(clazz, method, currentCode);
                             modified = true;
                             Logger?.Debug($"Applied method code mixin: {mixin.Method.DeclaringType?.Name}.{mixin.Method.Name}");
                         }
