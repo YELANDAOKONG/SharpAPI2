@@ -19,9 +19,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="SharpMC.SharpASM" Version="1.0.3.5" />
+      <PackageReference Include="SharpMC.SharpASM" Version="1.0.3.6" />
       <PackageReference Include="SharpMC.SharpLoader" Version="1.0.3.2" />
-      <PackageReference Include="SharpMC.SharpMixin" Version="1.0.4.3" />
+      <PackageReference Include="SharpMC.SharpMixin" Version="1.0.4.4" />
       <PackageReference Include="SharpMC.SharpPackage" Version="1.0.3.8" />
     </ItemGroup>
 
